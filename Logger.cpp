@@ -5,15 +5,15 @@
 
 // static variables
 
-int Logger::maxloglevel = LOGLEVEL_CRITICAL;
-int Logger::printmode = PRINTMODE_SERIAL
+int Logger::maxloglevel = LOGLEVEL_NOTSET;
+int Logger::printmode = PRINTMODE_SERIAL;
 
 
 // constructors
 
 Logger::Logger(const String & tag) {
   this->tag = tag;
-  this->loglevel = LOGLEVEL_CRITICAL;
+  this->loglevel = LOGLEVEL_NOTSET;
 }
 
 
@@ -25,9 +25,8 @@ Logger::Logger(const String & tag, int loglevel) {
 
 // public functions
 
-bool Logger::setMaxLoglevel(int mll) {
+void Logger::setMaxLoglevel(int mll) {
   maxloglevel = mll;
-  return true;
 }
 
 
@@ -36,9 +35,18 @@ int Logger::getMaxLoglevel() {
 }
 
 
-bool Logger::setLogLevel(int ll) {
+void Logger::setPrintMode(int pm) {
+  printmode = pm;
+}
+
+
+int Logger::getPrintMode() {
+  return printmode;
+}
+
+
+void Logger::setLogLevel(int ll) {
   this->loglevel = ll;
-  return true;
 }
 
 
@@ -47,14 +55,39 @@ int Logger::getLogLevel(int ll) const {
 }
 
 
+void Logger::c(const String & msg) const {
+  printMessage(LOGLEVEL_CRITICAL, msg);
+}
+
+
+void Logger::e(const String & msg) const {
+  printMessage(LOGLEVEL_ERROR, msg);
+}
+
+
+void Logger::w(const String & msg) const {
+  printMessage(LOGLEVEL_WARNING, msg);
+}
+
+
+void Logger::i(const String & msg) const {
+  printMessage(LOGLEVEL_INFO, msg);
+}
+
+
+void Logger::d(const String & msg) const {
+  printMessage(LOGLEVEL_DEBUG, msg);
+}
+
+
 // private functions
 
 bool Logger::checkLogLevel(int functionloglevel) const {
-  if(this->loglevel < functionloglevel) {
+  if(this->loglevel > functionloglevel) {
     return false;
   }
 
-  if(this->maxloglevel < functionloglevel) {
+  if(this->maxloglevel > functionloglevel) {
     return false;
   }
 
@@ -62,38 +95,56 @@ bool Logger::checkLogLevel(int functionloglevel) const {
 }
 
 
-void Logger::printSerial(int functionloglevel, const String & msg) const {
+void Logger::printMessage(int functionloglevel, const String & msg) const {
+  if(checkLogLevel(functionloglevel) == false)
+    return;
+
+  // make prefix
+  String newmsg = "";
+  
   switch(functionloglevel) {
     case LOGLEVEL_CRITICAL:
-      Serial.print("CRITICAL");
+      newmsg += "CRITICAL";
       break;
 
     case LOGLEVEL_ERROR:
-      Serial.print("CRITICAL");
+      newmsg += "ERROR";
       break;
 
     case LOGLEVEL_WARNING:
-      Serial.print("CRITICAL");
+      newmsg += "WARNING";
       break;
 
     case LOGLEVEL_INFO:
-      Serial.print("CRITICAL");
+      newmsg += "INFO";
       break;
 
     case LOGLEVEL_DEBUG:
-      Serial.print("CRITICAL");
+      newmsg += "DEBUG";
       break;
 
     default:
-      Serial.print("NONE");
+      newmsg += "NONE";
       break;
   }
 
-  Serial.print("(");
-  Serial.print(this->tag);
-  Serial.print("): ");
-  Serial.println(msg);
+  newmsg += "(" + this->tag + "): " + msg;
+
+  // choose print mode
+  switch(this->printmode) {
+    case PRINTMODE_SERIAL:
+      printSerial(newmsg);
+      break;
+
+    default:
+      break;
+  }
 
   return;
+}
+
+
+void Logger::printSerial(const String & msg) const {
+  Serial.println(msg);
 }
 

@@ -4,11 +4,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include "Logger.h"
 
 
 class WifiConnection {
   private:
-    static const String logString;
+    static const String tag;
+    static const Logger log;
     
     static String ssid;
     static String password;

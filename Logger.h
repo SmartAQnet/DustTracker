@@ -12,7 +12,7 @@
 #define LOGLEVEL_DEBUG 10
 #define LOGLEVEL_NOTSET 0
 
-#define PRINTMODE_SERIAL 0
+#define PRINTMODE_SERIAL 1
 
 
 
@@ -29,26 +29,26 @@ class Logger {
     Logger(const String & tag);
     Logger(const String & tag, int loglevel);
 
-    static bool setMaxLoglevel(int mll);
+    static void setMaxLoglevel(int mll);
     static int getMaxLoglevel();
 
-    // TODO: add set/get for printmode
+    static void setPrintMode(int pm);
+    static int getPrintMode();
 
-    bool setLogLevel(int ll);
+    void setLogLevel(int ll);
     int getLogLevel(int ll) const;
     
-    bool c(const String & msg) const;
-    bool e(const String & msg) const;
-    bool w(const String & msg) const;
-    bool i(const String & msg) const;
-    bool d(const String & msg) const;
+    void c(const String & msg) const;
+    void e(const String & msg) const;
+    void w(const String & msg) const;
+    void i(const String & msg) const;
+    void d(const String & msg) const;
 
     private:
       bool checkLogLevel(int functionloglevel) const;
-
-      // TODO: add printMessage mit printmode switch
+      void printMessage(int functionloglevel, const String & msg) const;
       
-      void printSerial(int functionloglevel, const String & msg) const;
+      void printSerial(const String & msg) const;
 
 };
 

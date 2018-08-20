@@ -4,6 +4,7 @@
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include "Logger.h"
 
 
 // global variables
@@ -13,7 +14,8 @@ const String invalidString = "__invalid_string__";
 
 // static variables
 
-const String WifiConnection::logString = "LOG: WifiConnection: ";
+const String WifiConnection::tag = "WifiConnection";
+const Logger WifiConnection::log = Logger("WifiConnection");
 
 String WifiConnection::ssid = invalidString;
 String WifiConnection::password = invalidString;
@@ -42,9 +44,7 @@ WifiConnection::WifiConnection(const String & ssid, const String & password) {
 
 bool WifiConnection::setSSID(const String & ssid) {
   if(canSetConnectionData() == false) {
-    Serial.print(this->logString);
-    Serial.print("ERROR: in setSSID(): Cannot set ssid: ");
-    Serial.println(ssid);
+    log.w("in setSSID(): Cannot set ssid: " + ssid);
     return false;
   }
 
@@ -55,9 +55,7 @@ bool WifiConnection::setSSID(const String & ssid) {
 
 bool WifiConnection::setPassword(const String & password) {
   if(canSetConnectionData() == false) {
-    Serial.print(this->logString);
-    Serial.print("ERROR: in setPassword(): Cannot set password: ");
-    Serial.println(password);
+    log.w("in setPassword(): Cannot set password: " + password);
     return false;
   }
 
@@ -78,8 +76,7 @@ String WifiConnection::getPassword() const {
 
 bool WifiConnection::initConnection() {
   if(hasValidConnectionData() == false) {
-    Serial.print(this->logString);
-    Serial.println("ERROR: in initConnection(): Cannot initialize connection due to invalid connection data");
+    log.e("in initConnection(): Cannot initialize connection due to invalid connection data");
     return false;
   }
   
@@ -104,15 +101,13 @@ bool WifiConnection::disconnect() {
 
 bool WifiConnection::connect() {
   if(hasValidConnectionData() == false) {
-    Serial.print(this->logString);
-    Serial.println("ERROR: in connect(): Cannot start connection due to invalid connection data");
+    log.e("in connect(): Cannot start connection due to invalid connection data");
     return false;
   }
 
   bool retval = disconnect();
   if(retval == false) {
-    Serial.print(this->logString);
-    Serial.println("ERROR: in connect(): Cannot close previous connection");
+    log.c("in connect(): Cannot close previous connection");
     return false;
   }
 
@@ -120,8 +115,7 @@ bool WifiConnection::connect() {
   this->connected = false;
 
   WiFi.begin(this->ssid.c_str(), this->password.c_str());
-  Serial.print(this->logString);
-  Serial.println("DEBUG: in connect(): Scanning for Wifi network: " + this->ssid);
+  log.i("in connect(): Scanning for Wifi network: " + this->ssid);
   
   return true;
 }
@@ -161,31 +155,18 @@ bool WifiConnection::sendUDP(const String & host, const unsigned int port, const
 
   retval = this->udp.beginPacket(chost, port);
   if(retval == 0) {
-    Serial.print(this->logString);
-    Serial.print("ERROR: in sendUDP(): Cannot resolve host \"");
-    Serial.print(chost);
-    Serial.print("\" with port ");
-    Serial.println(port);
+    log.e("in sendUDP(): Cannot resolve host \"" + host + "\" with port " + String(port));
     return false;
   }
 
   retval = this->udp.write((const uint8_t*) buff, bufflen);
   if(retval != bufflen) {
-    Serial.print(this->logString);
-    Serial.print("WARNING: in sendUDP(): could only write ");
-    Serial.print(retval);
-    Serial.print("/");
-    Serial.print(bufflen);
-    Serial.println(" bytes. Packet might be corrupted.");
+    log.w("in sendUDP(): could only write " + String(retval) + "/" + String(bufflen) + " bytes. Packet might be corrupted.");
   }
 
   retval = this->udp.endPacket();
   if(retval == 0) {
-    Serial.print(this->logString);
-    Serial.print("ERROR: in sendUDP(): Cannot send packet for host \"");
-    Serial.print(chost);
-    Serial.print("\" and port ");
-    Serial.println(port);
+    log.c("in sendUDP(): Cannot send packet to " + host + ":" + String(port));
     return false;
   }
 
@@ -212,39 +193,32 @@ void WifiConnection::ConnectionEventHandler(WiFiEvent_t event) {
       connected = true;
 
       ip = WiFi.localIP();
-      Serial.print(logString);
-      Serial.print("DEBUG: in ConnectionEventHandler(): Wifi connected to IP address: ");
-      Serial.println(ip);
+      log.i("in ConnectionEventHandler(): Wifi connected to IP address " + ip.toString());
 
       udp.stop();
       udpListenPort = random(49152, 65535);
       udp.begin(ip, udpListenPort);
 
-      Serial.print(logString);
-      Serial.print("DEBUG: in ConnectionEventHandler(): UDP listening on port: ");
-      Serial.println(udpListenPort);
+      log.i("in ConnectionEventHandler(): UDP listening on port " + String(udpListenPort));
       break;
 
     case SYSTEM_EVENT_STA_DISCONNECTED:
       scanning = true;
       connected = false;
       
-      Serial.print(logString);
-      Serial.println("DEBUG: in ConnectionEventHandler(): Wifi lost connection");
+      log.w("in ConnectionEventHandler(): Wifi lost connection");
       WiFi.disconnect(true);
       
       delay(100000);
 
       WiFi.begin(ssid.c_str(), password.c_str());
-      Serial.print(logString);
-      Serial.println("DEBUG: in ConnectionEventHandler(): trying to reconnect to WiFi");
+      log.i("in ConnectionEventHandler(): trying to reconnect to WiFi");
       break;
 
     case SYSTEM_EVENT_STA_CONNECTED:
       scanning = false;
       
-      Serial.print(logString);
-      Serial.println("DEBUG: in ConnectionEventHandler(): Wifi found connection");
+      log.i("in ConnectionEventHandler(): Wifi found connection");
       break;
   }
 }
