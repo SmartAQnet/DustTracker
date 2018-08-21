@@ -1,8 +1,18 @@
+#include <stdint.h>
+
 #include "WifiConnection.h"
 #include "Logger.h"
 
 String networkName = String("teco");
 String networkPassword = String("HMaRBAcdowHino");
+
+struct __attribute__((__packed__)) transfer_struct {
+  uint8_t border; // byteorder flag
+  int16_t two;
+  int32_t four;
+  char buff[32];
+  uint32_t ufour;
+};
 
 void setup() {
   Serial.begin(115200);
@@ -14,18 +24,26 @@ void setup() {
 
   WifiConnection WC(networkName, networkPassword);
   WC.initConnection();
-  log_e("test");
 }
 
 void loop() {
   Logger log("loop");
-  
   WifiConnection WC;
-  
+
   String message = "eine nachricht!";
-  WC.sendUDP("129.13.170.75", 1337, message.c_str(), message.length());
+
+  transfer_struct data;
+  data.border = 1;
+  data.two = 27137;
+  data.four = -7231337;
+  data.ufour = 7231337;
+  strncpy(data.buff, message.c_str(), 31);
+  data.buff[31] = '\0';
+
+
+  WC.sendUDP("win10-koepke.teco.edu", 1337, & data, sizeof(transfer_struct));
 
   log.i("now waiting");
-  delay(2000);
+  delay(5000);
 }
 
